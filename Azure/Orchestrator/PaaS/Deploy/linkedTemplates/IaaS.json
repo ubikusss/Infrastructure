@@ -1,0 +1,394 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for all resources."
+            }
+        },
+        "orchestratorVersion": {
+            "type": "string",
+            "defaultValue": "19.10.18",
+            "allowedValues": [
+                "19.10.18",
+                "19.4.5",
+                "18.4.7"
+            ],
+            "metadata": {
+                "description": "Version of the Orchestrator"
+            }
+        },
+        "passphrase": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 30,
+            "metadata": {
+                "description": "Passphrase used to generate encryption keys"
+            }
+        },
+        "SQLServerNameOrch": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Existing SQL Server Name."
+            }
+        },
+        "SQLDBNameOrch": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "SQL Server Database name."
+            }
+        },
+        "SQLDBUserOrch": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "SQL administrator user login."
+            }
+        },
+        "SQLDBPassOrch": {
+            "type": "securestring",
+            "defaultValue": "",
+            "metadata": {
+                "description": "SQL database admin user password."
+            }
+        },
+        "OrchVMSKU": {
+            "type": "string",
+            "defaultValue": "Standard_D2s_v3",
+            "metadata": {
+                "description": "The size of the UiPath Orchestrator virtual machines to provision."
+            }
+        },
+        "OrchAppName": {
+            "type": "string",
+            "metadata": {
+                "description": "Orchestrator name will have a random suffix appended."
+            },
+            "maxLength": 40
+        },
+        "OrchAdminPass": {
+            "type": "string",
+            "metadata": {
+                "description": "Define the password that will be used for the host administrator and the default tenant administrator account (admin)."
+            }
+        },
+        "OrchInstanceCount": {
+            "type": "int",
+            "metadata": {
+                "description": "Number of Orchestrator instances to be created. This relates to the number of Azure App Service instances or the Virtual Machine Scales set that will be deployed. Can be scaled after."
+            },
+            "defaultValue": 2,
+            "maxValue": 100
+        },
+        "OrchVMAdminLogin": {
+            "type": "string",
+            "metadata": {
+                "description": "Define the admin username for the machines that will host UiPath Orchestrator."
+            }
+        },
+        "OrchVMAdminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Define the admin password for the machines that will host UiPath Orchestrator."
+            }
+        },
+        "virtualNetworkNameOrch": {
+            "type": "string",
+            "metadata": {
+                "description": "Orchestrator Virtual Network name."
+            }
+        },
+        "OrchvirtualNetworkNewOrExisting": {
+            "type": "string",
+            "metadata": {
+                "description": "Orchestrator Virtual Network new or existing?."
+            }
+        },
+        "OrchaddressPrefixes": {
+            "type": "string",
+            "metadata": {
+                "description": "Orchestrator Virtual Network address prefix."
+            }
+        },
+        "subnetNameOrch": {
+            "type": "string",
+            "metadata": {
+                "description": "Orchestrator Virtual Network subnet name."
+            }
+        },
+        "OrchsubnetPrefix": {
+            "type": "string",
+            "metadata": {
+                "description": "Orchestrator Virtual Network subnet prefix."
+            }
+        },
+        "subnetRefOrch": {
+            "type": "string",
+            "metadata": {
+                "description": "Orchestrator Virtual Network subnet reference."
+            }
+        },
+        "OrchArtifactsIaaS": {
+            "type": "object",
+            "metadata": {
+                "description": "Orchestrator artifacts list."
+            }
+        },
+        "HAAconnectionString": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "High Availability Addon connection string."
+            }
+        },
+        "storageAccountName": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Storage account name for storing nuget packages."
+            }
+        },
+        "virtualNetworkName": {
+            "defaultValue": "newVnet",
+            "type": "String",
+            "metadata": {
+                "description": "Enter existing vnet name or type new name to create new VNET"
+            }
+        },
+        "virtualNetworkNewOrExisting": {
+            "defaultValue": "",
+            "type": "String",
+            "metadata": {
+                "description": "VirtualNetwork new or existing?"
+            }
+        }
+    },
+    "variables": {
+        "publicIPAddressName": "ui-orch-pip",
+        "loadBalancerName": "UiPathOrchLB",
+        "loadBalancerFrontEndName": "UiPathOrchLBFrontEnd",
+        "loadBalancerBackEndName": "UiPathOrchLBBackEnd",
+        "loadBalancerProbeName": "UiPathOrchLBHttpProbe",
+        "loadBalancerNatPoolName": "UiPathOrchLBNatPool",
+        "storageid": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+        "storageAccountType": "Standard_LRS"
+        
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[parameters('storageAccountName')]",
+            "condition": "[contains(parameters('orchestratorVersion'),'19')]",
+            "apiVersion": "2018-11-01",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "[variables('storageAccountType')]"
+            },
+            "kind": "Storage"
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachineScaleSets",
+            "name": "[parameters('OrchAppName')]",
+            "location": "[parameters('location')]",
+            "apiVersion": "2019-07-01",
+            "dependsOn": [
+                "[if(equals(parameters('OrchvirtualNetworkNewOrExisting'), 'new'), resourceId('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkNameOrch')),resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName')))]",
+                "[resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName'))]"
+            ],
+            "sku": {
+                "name": "[parameters('OrchVMSKU')]",
+                "capacity": "[parameters('OrchInstanceCount')]"
+            },
+            "properties": {
+                "overprovision": "true",
+                "upgradePolicy": {
+                    "mode": "Manual"
+                },
+                "virtualMachineProfile": {
+                    "storageProfile": {
+                        "osDisk": {
+                            "createOption": "FromImage",
+                            "caching": "ReadWrite"
+                        },
+                        "imageReference": {
+                            "publisher": "MicrosoftWindowsServer",
+                            "offer": "WindowsServer",
+                            "sku": "2019-Datacenter",
+                            "version": "latest"
+                        }
+                    },
+                    "osProfile": {
+                        "computerNamePrefix": "[substring(parameters('OrchAppName'), 0,9)]",
+                        "adminUsername": "[parameters('OrchVMAdminLogin')]",
+                        "adminPassword": "[parameters('OrchVMAdminPassword')]"
+                    },
+                    "networkProfile": {
+                        "networkInterfaceConfigurations": [
+                            {
+                                "name": "nic",
+                                "properties": {
+                                    "primary": true,
+                                    "ipConfigurations": [
+                                        {
+                                            "name": "ipconfig",
+                                            "properties": {
+                                                "subnet": {
+                                                    "id": "[parameters('subnetRefOrch')]"
+                                                },
+                                                "loadBalancerBackendAddressPools": [
+                                                    {
+                                                        "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools',variables('loadBalancerName'),variables('loadBalancerBackEndName'))]"
+                                                    }
+                                                ],
+                                                "loadBalancerInboundNatPools": [
+                                                    {
+                                                        "id": "[resourceId('Microsoft.Network/loadBalancers/inboundNatPools',variables('loadBalancerName'),variables('loadBalancerNatPoolName'))]"
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    "extensionProfile": {
+                        "extensions": [
+                            {
+                                "name": "customScript",
+                                "properties": {
+                                    "publisher": "Microsoft.Compute",
+                                    "settings": {
+                                        "fileUris": [
+                                            "[parameters('OrchArtifactsIaaS').OrchInstallScript]",
+                                            "[parameters('OrchArtifactsIaaS').OrchInstallPackage]",
+                                            "[parameters('OrchArtifactsIaaS').OrchInstallRewrite]",
+                                            "[parameters('OrchArtifactsIaaS').OrchInstallFramework]"
+                                        ]
+                                    },
+                                    "typeHandlerVersion": "1.8",
+                                    "autoUpgradeMinorVersion": true,
+                                    "protectedSettings": {
+                                        "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File Install-UiPathOrchestrator.ps1 -OrchestratorVersion ', parameters('orchestratorVersion'), ' -passphrase ',parameters('passphrase'),' -databaseServerName ', parameters('SQLServerNameOrch'),' -databaseName ', parameters('SQLDBNameOrch'),' -databaseUserName ', parameters('SQLDBUserOrch'),' -databaseUserPassword ', parameters('SQLDBPassOrch'),' -orchestratorAdminPassword ', parameters('OrchAdminPass'),' -redisServerHost ',parameters('HAAconnectionString'),' -NuGetStoragePath ', if(contains(parameters('orchestratorVersion'),'19'),concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountName'),';AccountKey=',listKeys(variables('storageid'), '2019-04-01').keys[0].value,';','EndpointSuffix=',replace(split(reference(variables('storageid')).primaryEndpoints.blob, 'blob.')[1], '/', '')),'NuGetPackages'))]"
+                                    },
+                                    "type": "CustomScriptExtension"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[parameters('virtualNetworkNameOrch')]",
+            "condition": "[equals(parameters('OrchvirtualNetworkNewOrExisting'), 'new')]",
+            "location": "[parameters('location')]",
+            "apiVersion": "2019-11-01",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('OrchaddressPrefixes')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('subnetNameOrch')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('OrchsubnetPrefix')]"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[variables('publicIPAddressName')]",
+            "location": "[parameters('location')]",
+            "apiVersion": "2019-11-01",
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic",
+                "dnsSettings": {
+                    "domainNameLabel": "[toLower(parameters('OrchAppName'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/loadBalancers",
+            "name": "[variables('loadBalancerName')]",
+            "location": "[parameters('location')]",
+            "apiVersion": "2019-11-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]"
+            ],
+            "properties": {
+                "frontendIPConfigurations": [
+                    {
+                        "name": "[variables('loadBalancerFrontEndName')]",
+                        "properties": {
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
+                            }
+                        }
+                    }
+                ],
+                "backendAddressPools": [
+                    {
+                        "name": "[variables('loadBalancerBackendName')]"
+                    }
+                ],
+                "loadBalancingRules": [
+                    {
+                        "name": "roundRobinLBRule",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations',variables('loadBalancerName'),variables('loadBalancerFrontEndName'))]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', variables('loadBalancerName'), variables('loadBalancerBackendName'))]"
+                            },
+                            "protocol": "Tcp",
+                            "frontendPort": 80,
+                            "backendPort": 80,
+                            "enableFloatingIP": false,
+                            "idleTimeoutInMinutes": 5,
+                            "probe": {
+                                "id": "[resourceId('Microsoft.Network/loadBalancers/probes',variables('loadBalancerName'),variables('loadBalancerProbeName'))]"
+                            }
+                        }
+                    }
+                ],
+                "probes": [
+                    {
+                        "name": "[variables('loadBalancerProbeName')]",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "port": 80,
+                            "intervalInSeconds": "5",
+                            "numberOfProbes": "2"
+                        }
+                    }
+                ],
+                "inboundNatPools": [
+                    {
+                        "name": "[variables('loadBalancerNatPoolName')]",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations', variables('loadBalancerName'), variables('loadBalancerFrontEndName'))]"
+                            },
+                            "protocol": "Tcp",
+                            "frontendPortRangeStart": 50000,
+                            "frontendPortRangeEnd": 50019,
+                            "backendPort": 3389
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}

@@ -1,0 +1,501 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for all resources."
+            }
+        },
+        "storageAccountName": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Storage account name for storing nuget packages."
+            }
+        },
+        "appServicePlanName": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "App service plan name."
+            }
+        },
+        "appName": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Web app name."
+            }
+        },
+        "appInsight": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Application insights name."
+            }
+        },
+        "SQLconnectionString": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Connection string for SQL server."
+            }
+        },
+        "SQLconnectionStringMSDeploy": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Connection string for SQL server designed for MSDeploy."
+            }
+        },
+        "SQLconnectionType": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "SQL connection type."
+            }
+        },
+        "EnableHAA": {
+            "type": "Bool",
+            "metadata": {
+                "description": "Is HAA Enabled?"
+            }
+        },
+        "HAAconnectionString": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "High Availability Addon connection string."
+            }
+        },
+        "apiKey": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "UiPath orchestrator API key."
+            }
+        },
+        "activitiesApiKey": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "UiPath Orchestrator activities API key."
+            }
+        },
+        "orchestratorVersion": {
+            "type": "string",
+            "defaultValue": "19.10.18",
+            "allowedValues": [
+                "19.10.18",
+                "19.4.5",
+                "18.4.7"
+            ],
+            "metadata": {
+                "description": "Version of the Orchestrator"
+            }
+        },
+        "orchestratorArtifacts": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "UiPath Orchestrator artifact (MSDeploy package)."
+            }
+        },
+        "machineKey": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Machine key."
+            }
+        },
+        "validationMachineKey": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Validation Machine Key."
+            }
+        },
+        "encriptionKey": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "UiPath Orchestrator Encryption Key."
+            }
+        },
+        "virtualNetworkName": {
+            "defaultValue": "newVnet",
+            "type": "String",
+            "metadata": {
+                "description": "Enter existing vnet name or type new name to create new VNET"
+            }
+        },
+        "webSubnetRef": {
+            "defaultValue": "",
+            "type": "String",
+            "metadata": {
+                "description": "Reference for the subnet designed to work with Web App VNet integration (specific config required)."
+            }
+        },
+        "appInsightsRegion": {
+            "defaultValue": "",
+            "type": "String",
+            "metadata": {
+                "description": "App insights region."
+            }
+        },
+        "orchestratorInstances": {
+            "type": "int",
+            "defaultValue": 1,
+            "minValue": 1,
+            "maxValue": 10,
+            "metadata": {
+                "description": "No. of Orchestrator instances on App service"
+            }
+        }
+    },
+    "variables": {
+        "storageid": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+        "storageAccountType": "Standard_LRS",
+        "appServiceWorkerSize": "3",
+        "workerSizeId": "3",
+        "numberOfWorkers": "1",
+        "appServiceTier": "PremiumV2",
+        "skuCode": "P1v2"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[parameters('storageAccountName')]",
+            "condition":"[contains(parameters('orchestratorVersion'),'19')]",
+            "apiVersion": "2018-11-01",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "[variables('storageAccountType')]"
+            },
+            "kind": "Storage"
+        },
+        {
+            "apiVersion": "2019-08-01",
+            "name": "[parameters('appServicePlanName')]",
+            "type": "Microsoft.Web/serverFarms",
+            "location": "[parameters('location')]",
+            "properties": {
+                "name": "[parameters('appServicePlanName')]",
+                "workerSize": "[variables('appServiceWorkerSize')]",
+                "workerSizeId": "[variables('workerSizeId')]",
+                "numberOfWorkers": "[variables('numberOfWorkers')]",
+                "reserved": false
+            },
+            "sku": {
+                "Tier": "[variables('appServiceTier')]",
+                "Name": "[variables('skuCode')]"
+            }
+        },
+        {
+            "apiVersion": "2018-11-01",
+            "name": "[parameters('appName')]",
+            "type": "Microsoft.Web/Sites",
+            "location": "[parameters('location')]",
+            "tags": {
+                "[concat('hidden-related:', resourceId('Microsoft.Web/serverfarms/', parameters('appServicePlanName')))]": "empty"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverFarms/', parameters('appServicePlanName'))]",
+                "[resourceId('Microsoft.Insights/components/', parameters('appInsight'))]"
+            ],
+            "properties": {
+                "name": "[parameters('appName')]",
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms/', parameters('appServicePlanName'))]",
+                "siteConfig": {
+                    "connectionStrings": [
+                        {
+                            "name": "Default",
+                            "ConnectionString": "[parameters('SQLconnectionString')]",
+                            "type": "[parameters('SQLconnectionType')]"
+                        }
+                    ],
+                    "appSettings": [
+                        {
+                            "name": "LoadBalancer.UseRedis",
+                            "value": "[if(parameters('EnableHAA'),'true','false')]"
+                        },
+                        {
+                            "name": "LoadBalancer.Redis.ConnectionString",
+                            "value": "[parameters('HAAconnectionString')]"
+                        },
+                        {
+                            "name": "LoadBalancer.SignalR.UseRedisScaleout",
+                            "value": "[if(parameters('EnableHAA'),'true','false')]"
+                        },
+                        {
+                            "name": "LoadBalancer.SignalR.RedisScaleout.ConnectionString",
+                            "value": "[parameters('HAAconnectionString')]"
+                        },
+                        {
+                            "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                            "value": "[reference(resourceId('Microsoft.Insights/components', parameters('appInsight'))).InstrumentationKey]"
+                        },
+                        {
+                            "name": "ApplicationInsightsAgent_EXTENSION_VERSION",
+                            "value": "~2"
+                        },
+                        {
+                            "name": "DiagnosticServices_EXTENSION_VERSION",
+                            "value": "~3"
+                        },
+                        {
+                            "name": "APPINSIGHTS_PROFILERFEATURE_VERSION",
+                            "value": "1.0.0"
+                        },
+                        {
+                            "name": "APPINSIGHTS_SNAPSHOTFEATURE_VERSION",
+                            "value": "1.0.0"
+                        },
+                        {
+                            "name": "InstrumentationEngine_EXTENSION_VERSION",
+                            "value": "~1"
+                        },
+                        {
+                            "name": "SnapshotDebugger_EXTENSION_VERSION",
+                            "value": "~1"
+                        },
+                        {
+                            "name": "XDT_MicrosoftApplicationInsights_BaseExtensions",
+                            "value": "~1"
+                        },
+                        {
+                            "name": "XDT_MicrosoftApplicationInsights_Mode",
+                            "value": "recommended"
+                        },
+                        {
+                            "name": "NuGet.Packages.ApiKey",
+                            "value": "[parameters('apiKey')]"
+                        },
+                        {
+                            "name": "NuGet.Activities.ApiKey",
+                            "value": "[parameters('activitiesApiKey')]"
+                        },
+                        {
+                            "name": "NuGet.Packages.Path",
+                            "value": "~/NuGetPackages"
+                        },
+                        {
+                            "name": "NuGet.Activities.Path",
+                            "value": "~/NuGetPackages/Activities"
+                        },
+                        {
+                            "name": "NuGet.Repository.Type",
+                            "value": "[if(contains(parameters('orchestratorVersion'),'19'),'Composite',json('null'))]"
+                        },
+                        {
+                            "name": "Storage.Type",
+                            "value": "[if(contains(parameters('orchestratorVersion'),'19'),'Azure',json('null'))]"
+                        },
+                        {
+                            "name": "Storage.Location",
+                            "value": "[if(contains(parameters('orchestratorVersion'),'19'),concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountName'),';AccountKey=',listKeys(variables('storageid'), '2019-04-01').keys[0].value,';','EndpointSuffix=',replace(split(reference(variables('storageid')).primaryEndpoints.blob, 'blob.')[1], '/', '')),json('null'))]"
+                        },
+                        {
+                            "name": "Auth.Cookie.Expire",
+                            "value": "30"
+                        },
+                        {
+                            "name": "AcceptedRootUrls",
+                            "value": "http://localhost:6234"
+                        },
+                        {
+                            "name": "Auth.Password.DefaultExpirationDays",
+                            "value": "0"
+                        },
+                        {
+                            "name": "Tenant.Registration.Enabled",
+                            "value": "false"
+                        },
+                        {
+                            "name": "OrganizationUnit.Enabled",
+                            "value": "false"
+                        },
+                        {
+                            "name": "CustomTitle",
+                            "value": ""
+                        },
+                        {
+                            "name": "ExternalAuth.AzureAD.Enabled",
+                            "value": "false"
+                        },
+                        {
+                            "name": "ExternalAuth.AzureAD.ApplicationId",
+                            "value": ""
+                        },
+                        {
+                            "name": "ExternalAuth.AzureAD.RedirectUri",
+                            "value": ""
+                        },
+                        {
+                            "name": "ExternalAuth.Saml2.Enabled",
+                            "value": "false"
+                        }
+                    ]
+                },
+                "enabled": true
+            },
+            "resources": [
+                {
+                    "apiVersion": "2018-11-01",
+                    "name": "MSDeploy",
+                    "type": "Extensions",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/Sites/', parameters('appName'))]",
+                        "[resourceId('Microsoft.Web/Sites/config', parameters('appName'), 'web')]",
+                        "[variables('storageid')]"
+                    ],
+                    "properties": {
+                        "packageUri": "[parameters('orchestratorArtifacts')]",
+                        "dbType": "SQL",
+                        "connectionString": "[parameters('SQLconnectionStringMSDeploy')]",
+                        "setParameters": {
+                            "IIS Web Application Name": "[parameters('appName')]",
+                            "databaseEnableAutomaticMigrations": "true",
+                            "machineKeyDecryption": "AES",
+                            "machineKeyDecryptionKey": "[parameters('machineKey')]",
+                            "machineKeyValidation": "HMACSHA256",
+                            "machineKeyValidationKey": "[parameters('validationMachineKey')]",
+                            "EncryptionKey": "[parameters('encriptionKey')]",
+                            "apiKey": "[parameters('apiKey')]",
+                            "activitiesApiKey": "[parameters('activitiesApiKey')]"
+                        }
+                    }
+                },
+                {
+                    "apiVersion": "2018-11-01",
+                    "name": "connectionstrings",
+                    "type": "config",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/Sites', parameters('appName'))]",
+                        "[resourceId('Microsoft.Web/Sites/extensions', parameters('appName'), 'MSDeploy')]"
+                    ],
+                    "properties": {
+                        "Default": {
+                            "value": "[parameters('SQLconnectionString')]",
+                            "type": "[parameters('SQLconnectionType')]"
+                        }
+                    }
+                },
+                {
+                    "apiVersion": "2018-11-01",
+                    "name": "web",
+                    "type": "config",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/Sites/', parameters('appName'))]"
+                    ],
+                    "properties": {
+                        "phpVersion": "off",
+                        "netFrameworkVersion": "v4.5",
+                        "use32BitWorkerProcess": "true",
+                        "webSocketsEnabled": true,
+                        "alwaysOn": "true",
+                        "httpLoggingEnabled": true,
+                        "logsDirectorySizeLimit": 40,
+                        "vnetName": "[if(parameters('EnableHAA'), parameters('virtualNetworkName'), '')]"
+                    }
+                },
+                {
+                    "type": "config",
+                    "apiVersion": "2019-08-01",
+                    "name": "virtualNetwork",
+                    "location": "[parameters('location')]",
+                    "condition": "[parameters('EnableHAA')]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', parameters('appName'))]",
+                        "[resourceId('Microsoft.Web/Sites/extensions', parameters('appName'), 'MSDeploy')]"
+                    ],
+                    "properties": {
+                        "subnetResourceId": "[parameters('webSubnetRef')]",
+                        "swiftSupported": true
+                    }
+                }
+            ]
+        },
+        {
+            "condition": "[greaterOrEquals(parameters('orchestratorInstances'),2)]",
+            "apiVersion": "2015-04-01",
+            "name": "[concat(parameters('appServicePlanName'), '-scaleset')]",
+            "type": "microsoft.insights/autoscalesettings",
+            "location": "[parameters('appInsightsRegion')]",
+            "tags": {
+                "[concat('hidden-link:', resourceId('Microsoft.Web/serverfarms/', parameters('appServicePlanName')))]": "Resource"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms/', parameters('appServicePlanName'))]"
+            ],
+            "properties": {
+                "profiles": [
+                    {
+                        "name": "Default",
+                        "capacity": {
+                            "minimum": "[parameters('orchestratorInstances')]",
+                            "maximum": "15",
+                            "default": "[parameters('orchestratorInstances')]"
+                        },
+                        "rules": [
+                            {
+                                "metricTrigger": {
+                                    "metricName": "CpuPercentage",
+                                    "metricResourceUri": "[resourceId('Microsoft.Web/serverfarms/', parameters('appServicePlanName'))]",
+                                    "timeGrain": "PT1M",
+                                    "statistic": "Average",
+                                    "timeWindow": "PT10M",
+                                    "timeAggregation": "Average",
+                                    "operator": "GreaterThan",
+                                    "threshold": 80
+                                },
+                                "scaleAction": {
+                                    "direction": "Increase",
+                                    "type": "ChangeCount",
+                                    "value": "1",
+                                    "cooldown": "PT10M"
+                                }
+                            },
+                            {
+                                "metricTrigger": {
+                                    "metricName": "CpuPercentage",
+                                    "metricResourceUri": "[resourceId('Microsoft.Web/serverfarms/', parameters('appServicePlanName'))]",
+                                    "timeGrain": "PT1M",
+                                    "statistic": "Average",
+                                    "timeWindow": "PT1H",
+                                    "timeAggregation": "Average",
+                                    "operator": "LessThan",
+                                    "threshold": 60
+                                },
+                                "scaleAction": {
+                                    "direction": "Decrease",
+                                    "type": "ChangeCount",
+                                    "value": "1",
+                                    "cooldown": "PT1H"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "name": "[concat(parameters('appServicePlanName'), '-scaleset')]",
+                "targetResourceUri": "[resourceId('Microsoft.Web/serverfarms/', parameters('appServicePlanName'))]"
+            }
+        },
+        {
+            "apiVersion": "2018-05-01-preview",
+            "name": "[parameters('appInsight')]",
+            "type": "Microsoft.Insights/components",
+            "location": "[parameters('appInsightsRegion')]",
+            "tags": {
+                "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Web/sites/', parameters('appName'))]": "Resource"
+            },
+            "properties": {
+                "ApplicationId": "[parameters('appName')]"
+            }
+        }
+    ]
+}
