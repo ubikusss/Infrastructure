@@ -431,11 +431,11 @@
         "subnetRefOrch": "[if(equals(parameters('OrchvirtualNetworkNewOrExisting'),'new'), resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('OrchVirtualNetworkName'), parameters('OrchsubnetName')), resourceId(parameters('OrchvirtualNetworkResourceGroupName'),'Microsoft.Network/virtualNetworks/subnets', parameters('OrchVirtualNetworkName'), parameters('OrchsubnetName')))]",
         "installScriptFileName": "get-haa.sh",
         "installScriptUri": "http://download.uipath.com/haa/get-haa.sh",
-        "SQLTemplateUri": "https://raw.githubusercontent.com/ubikusss/Infrastructure/master/Azure/Orchestrator/PaaS/Deploy/linkedTemplates/SQL.json",
-        "HAATemplateUri": "https://raw.githubusercontent.com/ubikusss/Infrastructure/master/Azure/Orchestrator/PaaS/Deploy/linkedTemplates/HAA.json",
-        "PaaSTemplateUri": "https://raw.githubusercontent.com/ubikusss/Infrastructure/master/Azure/Orchestrator/PaaS/Deploy/linkedTemplates/PaaS.json",
-        "IaaSTemplateUri": "https://raw.githubusercontent.com/ubikusss/Infrastructure/master/Azure/Orchestrator/PaaS/Deploy/linkedTemplates/IaaS.json",
-        "PeeringTemplateUri": "https://raw.githubusercontent.com/ubikusss/Infrastructure/master/Azure/Orchestrator/PaaS/Deploy/linkedTemplates/Peering.json",
+        "SQLTemplateUri": "https://raw.githubusercontent.com/ubikusss/Infrastructure/master/Azure/Orchestrator/PaaS&IaaS/Deploy/linkedTemplates/SQL.json",
+        "HAATemplateUri": "https://raw.githubusercontent.com/ubikusss/Infrastructure/master/Azure/Orchestrator/PaaS&IaaS/Deploy/linkedTemplates/HAA.json",
+        "PaaSTemplateUri": "https://raw.githubusercontent.com/ubikusss/Infrastructure/master/Azure/Orchestrator/PaaS&IaaS/Deploy/linkedTemplates/PaaS.json",
+        "IaaSTemplateUri": "https://raw.githubusercontent.com/ubikusss/Infrastructure/master/Azure/Orchestrator/PaaS&IaaS/Deploy/linkedTemplates/IaaS.json",
+        "PeeringTemplateUri": "https://raw.githubusercontent.com/ubikusss/Infrastructure/master/Azure/Orchestrator/PaaS&IaaS/Deploy/linkedTemplates/Peering.json",
         "OrchArtifactsIaaS": {
             "OrchInstallScript": "https://raw.githubusercontent.com/ubikusss/Infrastructure/master/Setup/Install-UiPathOrchestrator.ps1"
         }
