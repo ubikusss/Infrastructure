@@ -17,7 +17,7 @@ Unlike the marketplace deployment this will:
 - Use download links directly from UiPath
 
 
-Deploymentt steps:
+Deployment steps:
 1. Go to the Create UiDefinition [file](https://raw.githubusercontent.com/ubikusss/Infrastructure/master/Azure/Orchestrator/PaaS%26IaaS/Deploy/createUiDefinition.json)
 2. Copy the contents and paste it [here](https://portal.azure.com/#blade/Microsoft_Azure_CreateUIDef/SandboxBlade)
 3. Click Preview and fill in all the necessary fields according to the deployment type you need
@@ -25,6 +25,14 @@ Deploymentt steps:
 5. Copy the contents from the window that opened
 6. Go here:
 
-[![Deploy to Azure](https://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fubikusss%2FInfrastructure%2Fmaster%2FAzure%2FOrchestrator%2FPaaS%2FDeploy%2FmainTemplate.json)
+[![Deploy to Azure](https://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fubikusss%2FInfrastructure%2Fmaster%2FAzure%2FOrchestrator%2FPaaS&IaaS%2FDeploy%2FmainTemplate.json)
 
-7. Under the parameters 
+7. Do not start filling in the parameters, but go to `Edit parameters`
+8. Paste the parameters copied from the previous step:
+- minimize the `parameters` entry
+- select both brackets (`{...}`) for the parameters value
+- paste the json copied from the outputs window
+- click Save
+9. Fill inthe Subscription, resource group and location.
+10. Accept the terms if you will and click `Purchase`
+11. ENJOY UiPath products!

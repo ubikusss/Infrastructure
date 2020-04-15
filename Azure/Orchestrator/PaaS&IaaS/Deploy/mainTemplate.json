@@ -411,8 +411,8 @@
             "usgovvirginia": "usgovvirginia"
         },
         "appInsightsRegion": "[variables('azureLocationMap')[parameters('location')]]",
-        "storageAccountName": "[substring(replace(concat(variables('appName'),'-st'),'-',''),0,24)]",
-        "appServicePlanName": "[substring(concat(variables('appName'),'-plan'),0,30)]",
+        "storageAccountName": "[toLower(replace(concat(variables('appName'),'-st'),'-',''))]",
+        "appServicePlanName": "[concat(variables('appName'),'-plan')]",
         "enableNonSslPort": "false",
         "HAAPort": 10000,
         "numberOfInstances": 2,
