@@ -17,4 +17,14 @@ Unlike the marketplace deployment this will:
 - Use download links directly from UiPath
 
 
-[![Deploy to Azure](https://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FUiPath%2FInfrastructure%2Fmaster%2FAzure%2FOrchestrator%2FPaaS%2FDeploy%2FmainTemplate.json)
+Deploymentt steps:
+1. Go to the Create UiDefinition [file](https://raw.githubusercontent.com/ubikusss/Infrastructure/master/Azure/Orchestrator/PaaS%26IaaS/Deploy/createUiDefinition.json)
+2. Copy the contents and paste it [here](https://portal.azure.com/#blade/Microsoft_Azure_CreateUIDef/SandboxBlade)
+3. Click Preview and fill in all the necessary fields according to the deployment type you need
+4. In the last tab, `Review + Create` click on `View ouputs payload`
+5. Copy the contents from the window that opened
+6. Go here:
+
+[![Deploy to Azure](https://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fubikusss%2FInfrastructure%2Fmaster%2FAzure%2FOrchestrator%2FPaaS%2FDeploy%2FmainTemplate.json)
+
+7. Under the parameters 
