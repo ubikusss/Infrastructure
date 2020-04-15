@@ -1,0 +1,676 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+	"handler": "Microsoft.Azure.CreateUIDef",
+	"version": "0.1.2-preview",
+	"parameters": {
+		"basics": [
+			{
+				"name": "OrchestratorType",
+				"type": "Microsoft.Common.OptionsGroup",
+				"visible": true,
+				"label": "IaaS or PaaS?",
+				"defaultValue": "PaaS",
+				"toolTip": "Select from a IaaS deployment (Virtual Machine Scale Set) or a PaaS deployment Azure Web App.",
+				"constraints": {
+					"allowedValues": [
+						{
+							"label": "PaaS",
+							"value": "PaaS"
+						},
+						{
+							"label": "IaaS",
+							"value": "IaaS"
+						}
+					],
+					"required": true
+				}
+			}
+		],
+		"steps": [
+			{
+				"name": "OrchSetup",
+				"label": "Orchestrator Details",
+				"subLabel": {
+					"preValidation": "Orchestrator settings",
+					"postValidation": "Done"
+				},
+				"bladeTitle": "Orchestrator Settings",
+				"bladeSubtitle": "Configure Orchestrator settings",
+				"elements": [
+					{
+						"name": "orchestratorName",
+						"label": "Orchestrator name",
+						"type": "Microsoft.Common.TextBox",
+						"constraints": {
+							"required": true,
+							"regex": "^[a-z0-9A-Z-]{4,20}$",
+							"validationMessage": "Name length must be at least 4 and a maximum of 20 characters.</br>Make sure your name doesn't contain whitespace, unicode characters, or nonalphabetic characters, and that it doesn't begin with a number or symbol."
+						},
+						"toolTip": "Orchestrator name will have a random suffix appended."
+					},
+					{
+						"name": "orchestratorAdminPassword",
+						"type": "Microsoft.Compute.CredentialsCombo",
+						"visible": "[equals(basics('OrchestratorType'), 'IaaS')]",
+						"label": {
+							"password": "Password",
+							"confirmPassword": "Confirm password"
+						},
+						"constraints": {
+							"required": true,
+							"customPasswordRegex": "^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])[\\w~@#$%^&*+=|{}:;.?\\()\\[\\]-]{12,}$",
+							"customValidationMessage": "The password must be 12 to 35 characters long with at least 1 uppercase, 1 lowercase and 1 number. Can contain special characters with the exception of \\ or !."
+						},
+						"toolTip": {
+							"password": "Define the password that will be used for the host administrator and the default tenant administrator account (admin)."
+						},
+						"options": {
+							"hideConfirmation": false
+						},
+						"osPlatform": "Windows"
+					},
+					{
+						"name": "passphrase",
+						"label": "Orchestrator passphrase",
+						"type": "Microsoft.Common.TextBox",
+						"constraints": {
+							"required": true,
+							"regex": "^.{5,30}$",
+							"validationMessage": "Passphrase length must be at least 5 and a maximum of 30 characters."
+						},
+						"toolTip": "In multi-instance Orchestrator scenario, each instance needs to have the same machine key and encryption key in order to form an Orchestrator cluster. The machine key and encryption key get generated using the passphrase - each time the same passphrase is used, the same set of encryption key and machine key is obtained."
+					},
+					{
+						"name": "orchestratorVersion",
+						"label": "Orchestrator version",
+						"type": "Microsoft.Common.DropDown",
+						"defaultValue": "19.10.18",
+						"constraints": {
+							"allowedValues": [
+								{
+									"label": "19.10.18",
+									"value": "19.10.18"
+								},
+								{
+									"label": "19.4.5",
+									"value": "19.4.5"
+								},
+								{
+									"label": "18.4.7",
+									"value": "18.4.7"
+								}
+							]
+						},
+						"toolTip": "Long term support and fast track support versions of the Orchestrator."
+					},
+					{
+						"name": "orchestratorInstances",
+						"label": "Number of Orchestrator instances. (10 max for App Service).",
+						"toolTip": "Number of Orchestrator instances to be created. This relates to the number of Azure App Service instances or the Virtual Machine Scales set that will be deployed. Can be scaled after.",
+						"type": "Microsoft.Common.TextBox",
+						"constraints": {
+							"required": true,
+							"regex": "^([1-9]|100)$",
+							"validationMessage": "The instance number must be between 1 and 100. Only numbers accepted."
+						}
+					},
+					{
+						"name": "orchestratorSize",
+						"label": "Orchestrator size based on total no. of connected robots",
+						"visible": "[equals(basics('OrchestratorType'), 'PaaS')]",
+						"type": "Microsoft.Common.DropDown",
+						"defaultValue": "small",
+						"constraints": {
+							"allowedValues": [
+								{
+									"label": "Small",
+									"value": "Small"
+								},
+								{
+									"label": "Medium",
+									"value": "Medium"
+								},
+								{
+									"label": "Large",
+									"value": "Large"
+								}
+							]
+						},
+						"toolTip": "This will deploy different versions of the SQL DataBase. Small: 0-100 robots (Standard S1) Medium: 100-500 robots (Standard S3) Large: 500 or more robots (Premium P4)"
+					},
+					{
+						"name": "OrchVMSize",
+						"type": "Microsoft.Compute.SizeSelector",
+						"visible": "[equals(basics('OrchestratorType'), 'IaaS')]",
+						"label": "Virtual machine size",
+						"toolTip": "The size of the UiPath Orchestrator virtual machines to provision.",
+						"recommendedSizes": [
+							"Standard_D2s_v3",
+							"Standard_D4s_v3"
+						],
+						"osPlatform": "Windows",
+						"count": "1"
+					},
+					{
+						"type": "Microsoft.Common.TextBox",
+						"name": "VMSSAdminLogin",
+						"visible": "[equals(basics('OrchestratorType'), 'IaaS')]",
+						"constraints": {
+							"required": true,
+							"regex": "^(?!admin$|administrator$|sa$|root$|dbmanager$|loginmanager$|dbo$|guest$|information_schema$|sys$|db_accessadmin$|db_backupoperator$|db_datareader$|db_datawriter$|db_ddladmin$|db_denydatareader$|db_denydatawriter$|db_owner$|db_securityadmin$|public$)[a-zA-Z][a-zA-Z0-9]{4,35}$",
+							"validationMessage": "Make sure your login name meets the following requirements: </br> Not a typical system username (like admin, administrator, sa, root, dbmanager, loginmanager, etc.), or a built-in user or role (like guest, public, etc.).</br>Make sure your name doesn't contain whitespaces, unicode characters, or nonalphabetic characters, and that it doesn't begin with numbers or symbols.</br>At least 4 characters in length and a maximum of 35 characters"
+						},
+						"label": "VMSS VMs Admin Login",
+						"toolTip": "Define the admin username for the machines that will host UiPath Orchestrator."
+					},
+					{
+						"name": "VMSSAdminPassword",
+						"type": "Microsoft.Compute.CredentialsCombo",
+						"visible": "[equals(basics('OrchestratorType'), 'IaaS')]",
+						"label": {
+							"password": "Password",
+							"confirmPassword": "Confirm password"
+						},
+						"constraints": {
+							"required": true,
+							"customPasswordRegex": "^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])[\\w~@#$%^&*+=|{}:;.?\\()\\[\\]-]{12,}$",
+							"customValidationMessage": "The password must be 12 to 35 characters long with at least 1 uppercase, 1 lowercase and 1 number. Can contain special characters with the exception of \\ or !."
+						},
+						"toolTip": {
+							"password": "Define the admin password for the machines that will host UiPath Orchestrator."
+						},
+						"options": {
+							"hideConfirmation": false
+						},
+						"osPlatform": "Windows"
+					},
+					{
+						"name":"VMSSVNetInfo",
+						"type": "Microsoft.Common.InfoBox",
+						"visible": "[equals(basics('OrchestratorType'), 'IaaS')]",
+						"options": {
+							"text": "Virtual network that will be used for the UiPath Orchestrator Virtual Machine Scale Set. This network will be peered with the HAA VNet. Make sure that the address space does not overlap with the HAA VNet.",
+							"icon": "Warning"
+						}
+					},
+					{
+						"name": "OrchVirtualNetwork",
+						"type": "Microsoft.Network.VirtualNetworkCombo",
+						"visible": "[equals(basics('OrchestratorType'), 'IaaS')]",
+						"label": {
+							"virtualNetwork": "Orchestrator VNet",
+							"subnets": "Subnets"
+						},
+						"toolTip": {
+							"virtualNetwork": "Virtual network that will be used for the UiPath Orchestrator Virtual Machine Scale Set. This network will be peered with the HAA VNet if it's a new network. Otherwise please peer the networks manually. Also, make sure that the address space does not overlap with the HAA VNet.",
+							"subnets": "Subnet used for the Virtual Machine Scale Set hosting the UiPath Orchestrator."
+						},
+						"defaultValue": {
+							"name": "OrchVNet01",
+							"addressPrefixSize": "/16"
+						},
+						"constraints": {
+							"minAddressPrefixSize": "/16"
+						},
+						"options": {
+							"hideExisting": false
+						},
+						"subnets": {
+							"orch-subnet": {
+								"label": "VMSS subnet",
+								"defaultValue": {
+									"name": "orch-subnet",
+									"addressPrefixSize": "/24"
+								},
+								"constraints": {
+									"minAddressCount": 10,
+									"minAddressPrefixSize":"/28"
+								}
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "HAAServer",
+				"label": "HAA server configuration",
+				"subLabel": {
+					"preValidation": "Configure HAA settings",
+					"postValidation": "Done"
+				},
+				"bladeTitle": "HAA Settings",
+				"bladeSubtitle": "Configure HAA settings",
+				"elements": [
+					{
+						"name": "HAAInfo",
+						"type": "Microsoft.Common.InfoBox",
+						"visible": true,
+						"options": {
+							"icon": "Info",
+							"text": "If you are using more than one instance of UiPath Orchestrator you will need to install the High Availability Addon, a mandatory in-memory cache.",
+							"uri": ""
+						}
+					},
+					{
+						"name": "HighAvailabilityAddon",
+						"type": "Microsoft.Common.OptionsGroup",
+						"visible": "[less(int(steps('OrchSetup').orchestratorInstances), 2)]",
+						"label": "High Availability Add-on",
+						"defaultValue": "No",
+						"toolTip": "Enable the use of High Availability Add-on.",
+						"constraints": {
+							"allowedValues": [
+								{
+									"label": "Yes",
+									"value": "Yes"
+								},
+								{
+									"label": "No",
+									"value": "No"
+								}
+							],
+							"required": true
+						}
+					},
+					{
+						"name": "HAADetails",
+						"type": "Microsoft.Common.Section",
+						"label": "High Availability Addon details",
+						"visible": "[or(greater(int(steps('OrchSetup').orchestratorInstances), 1), equals(steps('HAAServer').HighAvailabilityAddon, 'Yes'))]",
+						"elements": [
+							{
+								"type": "Microsoft.Common.TextBox",
+								"visible": "[or(greater(int(steps('OrchSetup').orchestratorInstances), 1), equals(steps('HAAServer').HighAvailabilityAddon, 'Yes'))]",
+								"constraints": {
+									"required": true,
+									"regex": "^(?!admin$|administrator$|sa$|root$|dbmanager$|loginmanager$|dbo$|guest$|information_schema$|sys$|db_accessadmin$|db_backupoperator$|db_datareader$|db_datawriter$|db_ddladmin$|db_denydatareader$|db_denydatawriter$|db_owner$|db_securityadmin$|public$)[a-zA-Z][a-zA-Z0-9]{4,35}$",
+									"validationMessage": "Make sure your login name meets the following requirements: </br> Not a typical system username (like admin, administrator, sa, root, dbmanager, loginmanager, etc.), or a built-in user or role (like guest, public, etc.).</br>Make sure your name doesn't contain whitespaces, unicode characters, or nonalphabetic characters, and that it doesn't begin with numbers or symbols.</br>At least 4 characters in length and a maximum of 35 characters"
+								},
+								"label": "HAA Servers (VM) Admin Login",
+								"name": "HAAVMAdminLogin",
+								"toolTip": "Define the admin username for the High Availability Add-on virtual machines."
+							},
+							{
+								"name": "HAAVMAdminPassword",
+								"type": "Microsoft.Compute.CredentialsCombo",
+								"visible": "[or(greater(int(steps('OrchSetup').orchestratorInstances), 1), equals(steps('HAAServer').HighAvailabilityAddon, 'Yes'))]",
+								"label": {
+									"password": "Password",
+									"confirmPassword": "Confirm password",
+									"authenticationType": "Authentication Type",
+									"sshPublicKey": "SSH Public Key"
+								},
+								"constraints": {
+									"required": true,
+									"customPasswordRegex": "^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])[\\w~@#$%^&*+=|{}:;.?\\()\\[\\]-]{12,}$",
+									"customValidationMessage": "The password must be 12 to 35 characters long with at least 1 uppercase, 1 lowercase and 1 number. Can contain special characters with the exception of \\ or !."
+								},
+								"toolTip": {
+									"password": "Define the admin password for the High Availability Add-on virtual machines."
+								},
+								"options": {
+									"hideConfirmation": false
+								},
+								"osPlatform": "Linux"
+							},
+							{
+								"type": "Microsoft.Common.TextBox",
+								"visible": "[or(greater(int(steps('OrchSetup').orchestratorInstances), 1), equals(steps('HAAServer').HighAvailabilityAddon, 'Yes'))]",
+								"constraints": {
+									"required": true,
+									"regex": "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$",
+									"validationMessage": "Requires a valid email address."
+								},
+								"label": "HAA admin email",
+								"name": "HAAadminEmail",
+								"toolTip": "Define the admin email for the High Availability Add-on."
+							},
+							{
+								"name": "HAAAdminPassword",
+								"type": "Microsoft.Compute.CredentialsCombo",
+								"visible": "[or(greater(int(steps('OrchSetup').orchestratorInstances), 1), equals(steps('HAAServer').HighAvailabilityAddon, 'Yes'))]",
+								"label": {
+									"password": "Password",
+									"confirmPassword": "Confirm password"
+								},
+								"constraints": {
+									"required": true,
+									"customPasswordRegex": "^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])[\\w~@#$%^&*+=|{}:;.?\\()\\[\\]-]{12,}$",
+									"customValidationMessage": "The password must be 12 to 35 characters long with at least 1 uppercase, 1 lowercase and 1 number. Can contain special characters with the exception of \\ or !."
+								},
+								"toolTip": {
+									"password": "Define the admin password for the High Availability Add-on."
+								},
+								"options": {
+									"hideConfirmation": false
+								},
+								"osPlatform": "Windows"
+							},
+							{
+								"type": "Microsoft.Common.TextBox",
+								"visible": "[or(greater(int(steps('OrchSetup').orchestratorInstances), 1), equals(steps('HAAServer').HighAvailabilityAddon, 'Yes'))]",
+								"label": "High Availability Add-on License",
+								"constraints": {
+									"required": false
+								},
+								"name": "HAALicense",
+								"toolTip": "High Availability Add-on license. If not provided you will have to enter a license in 30 days."
+							},
+							{
+								"name": "vmSize",
+								"type": "Microsoft.Compute.SizeSelector",
+								"visible": "[or(greater(int(steps('OrchSetup').orchestratorInstances), 1), equals(steps('HAAServer').HighAvailabilityAddon, 'Yes'))]",
+								"label": "Virtual machine size",
+								"toolTip": "The size of the three RHEL (Red Hat Enterprise Linux) virtual machines to provision. We recommend 2-4 CPU and 8-16 GB RAM. ",
+								"constraints": {
+									"allowedSizes": [
+										"Standard_D2s_v3",
+										"Standard_D11",
+										"Standard_D11_v2",
+										"Standard_D2_v3",
+										"Standard_D2a_v4",
+										"Standard_D2as_v4",
+										"Standard_D3",
+										"Standard_D3_v2",
+										"Standard_D4_v3",
+										"Standard_D4a_v4",
+										"Standard_D4as_v4",
+										"Standard_D4s_v3",
+										"Standard_DS11",
+										"Standard_DS11_v2",
+										"Standard_DS3",
+										"Standard_DS3_v2",
+										"Standard_E2_v3",
+										"Standard_E2a_v4",
+										"Standard_E2as_v4",
+										"Standard_E2s_v3",
+										"Standard_F4",
+										"Standard_F4s",
+										"Standard_F4s_v2"
+									]
+								},
+								"recommendedSizes": [
+									"Standard_D2s_v3",
+									"Standard_D4s_v3"
+								],
+								"osPlatform": "Linux",
+								"count": "1"
+							},
+							{
+								"name": "HAAVirtualNetwork",
+								"type": "Microsoft.Network.VirtualNetworkCombo",
+								"visible": "[and(or(greater(int(steps('OrchSetup').orchestratorInstances), 1),equals(steps('HAAServer').HighAvailabilityAddon, 'Yes')), equals(basics('OrchestratorType'), 'PaaS'))]",
+								"label": {
+									"virtualNetwork": "Virtual network for HAA",
+									"subnets": "Subnets"
+								},
+								"toolTip": {
+									"virtualNetwork": "Virtual network that will be used to deploy the High Availability Add-on virtual machines. They will be deployed in a subnet and another subnet is required for the WebApp virtual network integration (private connectivity).",
+									"subnets": "Two subnets required: Virtual network subnet that will be used to deploy the High Availability Add-on virtual machines. Virtual network subnet used for App Service/Web App integration (private connectivity). Must be empty, configured and only used for this purpose."
+								},
+								"defaultValue": {
+									"name": "vnet01",
+									"addressPrefixSize": "/16"
+								},
+								"constraints": {
+									"minAddressPrefixSize": "/16"
+								},
+								"options": {
+									"hideExisting": false
+								},
+								"subnets": {
+									"haa-subnet": {
+										"label": "HAA subnet",
+										"defaultValue": {
+											"name": "haa-subnet",
+											"addressPrefixSize": "/24"
+										},
+										"constraints": {
+											"minAddressPrefixSize": "/24",
+											"minAddressCount": 12,
+											"requireContiguousAddresses": true
+										}
+									},
+									"webApp-VNetIntegr": {
+										"label": "Subnet used for Orchestrator Web App VNet integration",
+										"defaultValue": {
+											"name": "haa-integration",
+											"addressPrefixSize": "/24"
+										},
+										"constraints": {
+											"minAddressPrefixSize": "/24",
+											"minAddressCount": 32,
+											"requireContiguousAddresses": true
+										}
+									}
+								}
+							},
+							{
+								"name": "HAAVirtualNetworkIaaS",
+								"type": "Microsoft.Network.VirtualNetworkCombo",
+								"visible": "[and(or(greater(int(steps('OrchSetup').orchestratorInstances), 1),equals(steps('HAAServer').HighAvailabilityAddon, 'Yes')), equals(basics('OrchestratorType'), 'IaaS'))]",
+								"label": {
+									"virtualNetwork": "Virtual network for HAA",
+									"subnets": "Subnets"
+								},
+								"toolTip": {
+									"virtualNetwork": "Virtual network that will be used to deploy the High Availability Add-on virtual machines. They will be deployed in a subnet defined below.",
+									"subnets": "Virtual network subnet that will be used to deploy the High Availability Add-on virtual machines."
+								},
+								"defaultValue": {
+									"name": "vnet01",
+									"addressPrefixSize": "/16"
+								},
+								"constraints": {
+									"minAddressPrefixSize": "/16"
+								},
+								"options": {
+									"hideExisting": false
+								},
+								"subnets": {
+									"haa-subnet": {
+										"label": "HAA subnet",
+										"defaultValue": {
+											"name": "haa-subnet",
+											"addressPrefixSize": "/24"
+										},
+										"constraints": {
+											"minAddressPrefixSize": "/24",
+											"minAddressCount": 12,
+											"requireContiguousAddresses": true
+										}
+									}
+								}
+							}
+						]
+					}
+				]
+			},
+			{
+				"name": "OrchestratorSQLServer",
+				"label": "Orchestrator SQL settings",
+				"subLabel": {
+					"preValidation": "Configure Orchestrator SQL settings",
+					"postValidation": "Done"
+				},
+				"bladeTitle": "Orchestrator SQL settings",
+				"bladeSubtitle": "Configure Orchestrator SQL settings",
+				"elements": [
+					{
+						"name": "SQLExistingConnection",
+						"type": "Microsoft.Common.OptionsGroup",
+						"label": "Existing SQL?",
+						"defaultValue": "No",
+						"toolTip": "Enable the orchestrator to use an existing SQL server or create an Azure SQL Database (single instance).",
+						"constraints": {
+							"allowedValues": [
+								{
+									"label": "Yes",
+									"value": "Yes"
+								},
+								{
+									"label": "No",
+									"value": "No"
+								}
+							],
+							"required": true
+						}
+					},
+					{
+						"type": "Microsoft.Common.TextBox",
+						"visible": "[equals(steps('OrchestratorSQLServer').SQLExistingConnection, 'No')]",
+						"constraints": {
+							"required": true,
+							"regex": "^[a-z-A-Z][a-z-A-Z-0-9]{4,25}$",
+							"validationMessage": "SQL Server Name Prefix must comply with the following name rules:</br>At least 4 characters in length and a maximum of 25 characters</br>Make sure your name doesn't contain whitespace, unicode characters, or nonalphabetic characters, and that it doesn't begin with a number or symbol."
+						},
+						"label": "Orchestrator SQL server name",
+						"name": "OrchestratorSQLServerName",
+						"toolTip": "SQL server name will have a random suffix appended."
+					},
+					{
+						"type": "Microsoft.Common.TextBox",
+						"visible": "[equals(steps('OrchestratorSQLServer').SQLExistingConnection, 'No')]",
+						"constraints": {
+							"required": true,
+							"regex": "^(?!admin$|administrator$|sa$|root$|dbmanager$|loginmanager$|dbo$|guest$|information_schema$|sys$|db_accessadmin$|db_backupoperator$|db_datareader$|db_datawriter$|db_ddladmin$|db_denydatareader$|db_denydatawriter$|db_owner$|db_securityadmin$|public$)[a-zA-Z][a-zA-Z0-9]{4,35}$",
+							"validationMessage": "Make sure your login name meets the following requirements: </br>It's a SQL Identifier, and not a typical system name (like admin, administrator, sa, root, dbmanager, loginmanager, etc.), or a built-in database user or role (like dbo, guest, public, etc.).</br>Make sure your name doesn't contain whitespaces, unicode characters, or nonalphabetic characters, and that it doesn't begin with numbers or symbols.</br>At least 4 characters in length and a maximum of 35 characters"
+						},
+						"label": "Orchestrator SQL server admin login",
+						"name": "OrchestratorSQLServerAdminLogin",
+						"toolTip": "Define the admin username for the Orchestrator SQL server."
+					},
+					{
+						"name": "OrchestratorSQLServerAdminPassword",
+						"visible": "[equals(steps('OrchestratorSQLServer').SQLExistingConnection, 'No')]",
+						"type": "Microsoft.Compute.CredentialsCombo",
+						"label": {
+							"password": "Password",
+							"confirmPassword": "Confirm password"
+						},
+						"constraints": {
+							"required": true,
+							"customPasswordRegex": "^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])[\\w~@#$%^&*+=|{}:;.?\\()\\[\\]-]{12,}$",
+							"customValidationMessage": "The password must be 12 to 35 characters long with at least 1 uppercase, 1 lowercase and 1 number. Can contain special characters with the exception of \\ or !."
+						},
+						"toolTip": {
+							"password": "Define the admin password for the Orchestrator SQL server."
+						},
+						"options": {
+							"hideConfirmation": false
+						},
+						"osPlatform": "Windows"
+					},
+					{
+						"type": "Microsoft.Common.TextBox",
+						"visible": "[equals(steps('OrchestratorSQLServer').SQLExistingConnection, 'Yes')]",
+						"constraints": {
+							"required": true,
+							"regex": ".*",
+							"validationMessage": "SQL Server Name can be an IP or domain name."
+						},
+						"label": "Existing SQL server for Orchestrator",
+						"name": "OrchestratorExistingSQLServerName",
+						"toolTip": "Orchestrator SQL server fully qualified domain name or IP. </br> This must be publically available or in the same virtual network as the High Availability Addon."
+					},
+					{
+						"type": "Microsoft.Common.TextBox",
+						"visible": "[equals(steps('OrchestratorSQLServer').SQLExistingConnection, 'Yes')]",
+						"constraints": {
+							"required": true,
+							"regex": "^[a-z-A-Z][a-z-A-Z-0-9]{3,25}$",
+							"validationMessage": "SQL database name must comply with the following name rules:</br>At least 3 characters in length and a maximum of 25 characters</br>Make sure your name doesn't contain whitespace, unicode characters, or nonalphabetic characters, and that it doesn't begin with a number or symbol."
+						},
+						"label": "Existing Orchestrator SQL server database",
+						"name": "OrchestratorExistingSQLServerDatabase",
+						"toolTip": "Existing Orchestrator SQL server database."
+					},
+					{
+						"type": "Microsoft.Common.TextBox",
+						"visible": "[equals(steps('OrchestratorSQLServer').SQLExistingConnection, 'Yes')]",
+						"constraints": {
+							"required": true,
+							"regex": "^[a-z-A-Z][a-z-A-Z-0-9]{3,25}$",
+							"validationMessage": "SQL admin can be any letter or number (length 3-25)."
+						},
+						"label": "Existing Orchestrator SQL server admin login",
+						"name": "OrchestratorExistingSQLServerAdminLogin",
+						"toolTip": "Admin username for the existing Orchestrator SQL server."
+					},
+					{
+						"name": "OrchestratorExistingSQLServerAdminPass",
+						"visible": "[equals(steps('OrchestratorSQLServer').SQLExistingConnection, 'Yes')]",
+						"type": "Microsoft.Compute.CredentialsCombo",
+						"label": {
+							"password": "Existing admin password",
+							"confirmPassword": "Existing admin password confirmation"
+						},
+						"constraints": {
+							"required": true
+						},
+						"toolTip": {
+							"password": "Provide the existing admin password for the existing Orchestrator SQL server."
+						},
+						"options": {
+							"hideConfirmation": false
+						},
+						"osPlatform": "Windows"
+					}
+				]
+			}
+		],
+		"outputs": {
+			"location": "[location()]",
+			"IaaSorPaaS": "[basics('OrchestratorType')]",
+			"appName": "[steps('OrchSetup').orchestratorName]",
+			"orchestratorAdminPassword": "[steps('OrchSetup').orchestratorAdminPassword.password]",
+			"passphrase": "[steps('OrchSetup').passphrase]",
+			"orchestratorVersion": "[steps('OrchSetup').orchestratorVersion]",
+			"orchestratorSize": "[steps('OrchSetup').orchestratorSize]",
+			"orchestratorInstances": "[int(steps('OrchSetup').orchestratorInstances)]",
+			"orchestratorVMSize": "[steps('OrchSetup').OrchVMSize]",
+			"orchestratorVMAdminLogin": "[steps('OrchSetup').VMSSAdminLogin]",
+			"orchestratorVMAdminPassword": "[steps('OrchSetup').VMSSAdminPassword.password]",
+
+			"OrchvirtualNetworkNewOrExisting": "[steps('OrchSetup').OrchVirtualNetwork.newOrExisting]",
+			"OrchVirtualNetworkName":"[steps('OrchSetup').OrchVirtualNetwork.name]",
+			"OrchaddressPrefixes": "[steps('OrchSetup').OrchVirtualNetwork.addressPrefix]",
+			"OrchsubnetName": "[steps('OrchSetup').OrchVirtualNetwork.subnets.orch-subnet.name]",
+			"OrchsubnetPrefix": "[steps('OrchSetup').OrchVirtualNetwork.subnets.orch-subnet.addressPrefix]",
+			"OrchvirtualNetworkResourceGroupName": "[steps('OrchSetup').OrchVirtualNetwork.resourceGroup]",
+			
+			"HAAVMAdminLogin": "[steps('HAAServer').HAADetails.HAAVMAdminLogin]",
+			"HAAVMAdminPassword": "[steps('HAAServer').HAADetails.HAAVMAdminPassword.password]",
+			"HAAadminEmail": "[steps('HAAServer').HAADetails.HAAadminEmail]",
+			"HAAAdminPassword": "[steps('HAAServer').HAADetails.HAAAdminPassword.password]",
+			"HAALicense": "[steps('HAAServer').HAADetails.HAALicense]",
+
+			"HAAvirtualNetworkNewOrExistingPaaS": "[steps('HAAServer').HAADetails.HAAVirtualNetwork.newOrExisting]",
+			"HAAvirtualNetworkNamePaaS": "[steps('HAAServer').HAADetails.HAAVirtualNetwork.name]",
+			"HAAaddressPrefixesPaaS": "[steps('HAAServer').HAADetails.HAAVirtualNetwork.addressPrefix]",
+			"HAAsubnetNamePaaS": "[steps('HAAServer').HAADetails.HAAVirtualNetwork.subnets.haa-subnet.name]",
+			"HAAsubnetPrefixPaaS": "[steps('HAAServer').HAADetails.HAAVirtualNetwork.subnets.haa-subnet.addressPrefix]",
+			"HAAwebAppsubnetNamePaaS": "[steps('HAAServer').HAADetails.HAAVirtualNetwork.subnets.webApp-VNetIntegr.name]",
+			"HAAwebAppsubnetPrefixPaaS": "[steps('HAAServer').HAADetails.HAAVirtualNetwork.subnets.webApp-VNetIntegr.addressPrefix]",
+			"HAAvirtualNetworkResourceGroupNamePaaS": "[steps('HAAServer').HAADetails.HAAVirtualNetwork.resourceGroup]",
+
+			"HAAvirtualNetworkNewOrExistingIaaS": "[steps('HAAServer').HAADetails.HAAVirtualNetworkIaaS.newOrExisting]",
+			"HAAvirtualNetworkNameIaaS": "[steps('HAAServer').HAADetails.HAAVirtualNetworkIaaS.name]",
+			"HAAaddressPrefixesIaaS": "[steps('HAAServer').HAADetails.HAAVirtualNetworkIaaS.addressPrefix]",
+			"HAAsubnetNameIaaS": "[steps('HAAServer').HAADetails.HAAVirtualNetworkIaaS.subnets.haa-subnet.name]",
+			"HAAsubnetPrefixIaaS": "[steps('HAAServer').HAADetails.HAAVirtualNetworkIaaS.subnets.haa-subnet.addressPrefix]",
+			"HAAvirtualNetworkResourceGroupNameIaaS": "[steps('HAAServer').HAADetails.HAAVirtualNetworkIaaS.resourceGroup]",
+
+			"HAAvirtualMachineSize": "[steps('HAAServer').HAADetails.vmSize]",
+			"SQLServerName": "[steps('OrchestratorSQLServer').OrchestratorSQLServerName]",
+			"SQLServerAdminLogin": "[steps('OrchestratorSQLServer').OrchestratorSQLServerAdminLogin]",
+			"SQLServerAdminPassword": "[steps('OrchestratorSQLServer').OrchestratorSQLServerAdminPassword.password]",
+			"ExistingSQL": "[equals(steps('OrchestratorSQLServer').SQLExistingConnection, 'Yes')]",
+			"ExistingSQLServerName": "[steps('OrchestratorSQLServer').OrchestratorExistingSQLServerName]",
+			"ExistingSQLServerDatabase": "[steps('OrchestratorSQLServer').OrchestratorExistingSQLServerDatabase]",
+			"ExistingSQLServerAdminLogin": "[steps('OrchestratorSQLServer').OrchestratorExistingSQLServerAdminLogin]",
+			"ExistingSQLServerAdminPass": "[steps('OrchestratorSQLServer').OrchestratorExistingSQLServerAdminPass.password]",
+			"EnableHAA": "[or(greater(int(steps('OrchSetup').orchestratorInstances), 1), equals(steps('HAAServer').HighAvailabilityAddon, 'Yes'))]"
+		}
+	}
+}

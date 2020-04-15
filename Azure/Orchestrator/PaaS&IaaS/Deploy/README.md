@@ -12,5 +12,9 @@ This ARM template will deploy UiPath Orchestrator (WebApp - single/multi node wi
 -RedisCache (only if the parameter orchestratorInstances is greater than 1 and lower than 10)</br>
 -Application Insights Rules (if the selected parameter orchestratorAlertRules is "yes" )</br>
 
+Unlike the marketplace deployment this will:
+- Not use unique strings
+- Use download links directly from UiPath
+
 
 [![Deploy to Azure](https://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FUiPath%2FInfrastructure%2Fmaster%2FAzure%2FOrchestrator%2FPaaS%2FDeploy%2FmainTemplate.json)

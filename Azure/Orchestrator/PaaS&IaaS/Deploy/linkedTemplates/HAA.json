@@ -125,13 +125,6 @@
                 "description": "Install script URI"
             }
         },
-        "installPackageUri": {
-            "type": "String",
-            "defaultValue": "",
-            "metadata": {
-                "description": "Install sackage URI"
-            }
-        },
         "installScriptFileName": {
             "type": "String",
             "defaultValue": "",
@@ -372,12 +365,11 @@
                         "autoUpgradeMinorVersion": true,
                         "settings": {
                             "fileUris": [
-                                "[parameters('installScriptUri')]",
-                                "[parameters('installPackageUri')]"
+                                "[parameters('installScriptUri')]"
                             ]
                         },
                         "protectedSettings": {
-                            "commandToExecute": "[concat('sh ', parameters('installScriptFileName'),' -u ', parameters('HAAadminEmail'),' -p ',parameters('HAAAdminPassword'),' -j ',reference(resourceId('Microsoft.Network/networkInterfaces/',concat(parameters('vm-prefix'),'-master-nic')), '2019-04-01').ipConfigurations[0].properties.privateIPAddress, ' -w ', parameters('installPackageUri'))]"
+                            "commandToExecute": "[concat('sh ', parameters('installScriptFileName'),' -u ', parameters('HAAadminEmail'),' -p ',parameters('HAAAdminPassword'),' -j ',reference(resourceId('Microsoft.Network/networkInterfaces/',concat(parameters('vm-prefix'),'-master-nic')), '2019-04-01').ipConfigurations[0].properties.privateIPAddress)]"
                         }
                     }
                 }
@@ -473,12 +465,11 @@
                         "autoUpgradeMinorVersion": true,
                         "settings": {
                             "fileUris": [
-                                "[parameters('installScriptUri')]",
-                                "[parameters('installPackageUri')]"
+                                "[parameters('installScriptUri')]"
                             ]
                         },
                         "protectedSettings": {
-                            "commandToExecute": "[concat('sh ', parameters('installScriptFileName'),' -u ', parameters('HAAadminEmail'),' -p ',parameters('HAAAdminPassword'),' -l ',parameters('HAALicense'),' -w ', parameters('installPackageUri'))]"
+                            "commandToExecute": "[concat('sh ', parameters('installScriptFileName'),' -u ', parameters('HAAadminEmail'),' -p ',parameters('HAAAdminPassword'),' -l ',parameters('HAALicense'))]"
                         }
                     }
                 }

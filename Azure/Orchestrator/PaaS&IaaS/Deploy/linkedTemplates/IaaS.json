@@ -152,20 +152,6 @@
             "metadata": {
                 "description": "Storage account name for storing nuget packages."
             }
-        },
-        "virtualNetworkName": {
-            "defaultValue": "newVnet",
-            "type": "String",
-            "metadata": {
-                "description": "Enter existing vnet name or type new name to create new VNET"
-            }
-        },
-        "virtualNetworkNewOrExisting": {
-            "defaultValue": "",
-            "type": "String",
-            "metadata": {
-                "description": "VirtualNetwork new or existing?"
-            }
         }
     },
     "variables": {
@@ -265,10 +251,7 @@
                                     "publisher": "Microsoft.Compute",
                                     "settings": {
                                         "fileUris": [
-                                            "[parameters('OrchArtifactsIaaS').OrchInstallScript]",
-                                            "[parameters('OrchArtifactsIaaS').OrchInstallPackage]",
-                                            "[parameters('OrchArtifactsIaaS').OrchInstallRewrite]",
-                                            "[parameters('OrchArtifactsIaaS').OrchInstallFramework]"
+                                            "[parameters('OrchArtifactsIaaS').OrchInstallScript]"
                                         ]
                                     },
                                     "typeHandlerVersion": "1.8",

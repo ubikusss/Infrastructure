@@ -337,27 +337,13 @@
         "HAAvirtualMachineSize": {
             "defaultValue": "Standard_D2s_v3",
             "type": "String"
-        },
-        "_artifactsLocation": {
-            "type": "string",
-            "metadata": {
-                "description": "The base URI where artifacts required by this template are located including a trailing '/'"
-            },
-            "defaultValue": "[deployment().properties.templateLink.uri]"
-        },
-        "_artifactsLocationSasToken": {
-            "type": "securestring",
-            "metadata": {
-                "description": "The sasToken required to access _artifactsLocation.  When the template is deployed using the accompanying scripts, a sasToken will be automatically generated. Use the defaultValue if the staging location is not secured."
-            },
-            "defaultValue": ""
         }
     },
     "variables": {
         "appName": "[parameters('appName')]",
         "SQLServerName": "[trim(toLower(concat(parameters('SQLServerName'),'-', uniqueString(resourceGroup().id) )))]",
-        "orchestratorArtifacts": "[uri(parameters('_artifactsLocation'),concat(parameters('orchestratorVersion'),'/UiPath.Web.zip',parameters('_artifactsLocationSasToken')))]",
-        "dbName": "[toLower(concat(parameters('appName'),uniqueString(resourceGroup().id),'-db'))]",
+        "orchestratorArtifacts": "[concat('https://download.uipath.com/versions/',parameters('orchestratorVersion'),'/',if(or(startsWith(parameters('orchestratorVersion'), '19.4'), startsWith(parameters('orchestratorVersion'),'18.4')),'UiPath.Web.zip','UiPath.Orchestrator.Web.zip'))]",
+        "dbName": "[toLower(concat(parameters('appName'),'-db'))]",
         "dbEdition": "[if(contains(parameters('orchestratorSize'), 'Small'), 'Standard', if(contains(parameters('orchestratorSize'), 'Medium'), 'Standard', 'Premium'))]",
         "dbPerformanceLevel": "[if(contains(parameters('orchestratorSize'), 'Small'), 'S1', if(contains(parameters('orchestratorSize'), 'Medium'), 'S3', 'P4'))]",
         "salt": "[uniqueString(parameters('passphrase'))]",
@@ -374,7 +360,7 @@
         "validationMachineKey": "[toUpper(substring(replace(concat(variables('firstKey'),variables('secondKey'),variables('fourthKey'),variables('seventhKey'),variables('fifthKey'),variables('sixthKey')),'-',''), 0, 128))]",
         "apiKey": "[guid(parameters('passphrase'),variables('firstKey'))]",
         "activitiesApiKey": "[guid(parameters('passphrase'),variables('firstKey'))]",
-        "appInsight": "[trim(toLower(concat( parameters('appName'), uniqueString(resourceGroup().id),'-appin' ) ))]",
+        "appInsight": "[trim(toLower(concat(parameters('appName'),'-appin' ) ))]",
         "azureLocationMap": {
             "eastasia": "southeastasia",
             "southeastasia": "southeastasia",
@@ -425,8 +411,8 @@
             "usgovvirginia": "usgovvirginia"
         },
         "appInsightsRegion": "[variables('azureLocationMap')[parameters('location')]]",
-        "storageAccountName": "[substring(replace(concat(variables('appName'),uniqueString(resourceGroup().id),'sc'),'-',''),0,24)]",
-        "appServicePlanName": "[substring(concat(variables('appName'),uniqueString(resourceGroup().id),'-sp'),0,30)]",
+        "storageAccountName": "[substring(replace(concat(variables('appName'),'-st'),'-',''),0,24)]",
+        "appServicePlanName": "[substring(concat(variables('appName'),'-plan'),0,30)]",
         "enableNonSslPort": "false",
         "HAAPort": 10000,
         "numberOfInstances": 2,
@@ -443,20 +429,15 @@
         "subnetRefIaaS": "[if(equals(parameters('HAAvirtualNetworkNewOrExistingIaaS'),'new'), resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('HAAvirtualNetworkNameIaaS'), parameters('HAAsubnetNameIaaS')), resourceId(parameters('HAAvirtualNetworkResourceGroupNameIaaS'),'Microsoft.Network/virtualNetworks/subnets', parameters('HAAvirtualNetworkNameIaaS'), parameters('HAAsubnetNameIaaS')))]",
         "webSubnetRef": "[if(equals(parameters('HAAvirtualNetworkNewOrExistingPaaS'),'new'), resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('HAAvirtualNetworkNamePaaS'), parameters('HAAwebAppsubnetNamePaaS')), resourceId(parameters('HAAvirtualNetworkResourceGroupNamePaaS'),'Microsoft.Network/virtualNetworks/subnets', parameters('HAAvirtualNetworkNamePaaS'), parameters('HAAwebAppsubnetNamePaaS')))]",
         "subnetRefOrch": "[if(equals(parameters('OrchvirtualNetworkNewOrExisting'),'new'), resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('OrchVirtualNetworkName'), parameters('OrchsubnetName')), resourceId(parameters('OrchvirtualNetworkResourceGroupName'),'Microsoft.Network/virtualNetworks/subnets', parameters('OrchVirtualNetworkName'), parameters('OrchsubnetName')))]",
-        "installScriptFileName": "install-haa.sh",
-        "installPackage": "haa.tar.gz",
-        "installPackageUri": "[uri(parameters('_artifactsLocation'),concat(variables('installPackage'),parameters('_artifactsLocationSasToken')))]",
-        "installScriptUri": "[uri(parameters('_artifactsLocation'),concat(variables('installScriptFileName'),parameters('_artifactsLocationSasToken')))]",
-        "SQLTemplateUri": "[uri(parameters('_artifactsLocation'),concat('linkedTemplates/SQL.json', parameters('_artifactsLocationSasToken')))]",
-        "HAATemplateUri": "[uri(parameters('_artifactsLocation'),concat('linkedTemplates/HAA.json', parameters('_artifactsLocationSasToken')))]",
-        "PaaSTemplateUri": "[uri(parameters('_artifactsLocation'),concat('linkedTemplates/PaaS.json', parameters('_artifactsLocationSasToken')))]",
-        "IaaSTemplateUri": "[uri(parameters('_artifactsLocation'),concat('linkedTemplates/IaaS.json', parameters('_artifactsLocationSasToken')))]",
-        "PeeringTemplateUri": "[uri(parameters('_artifactsLocation'),concat('linkedTemplates/Peering.json', parameters('_artifactsLocationSasToken')))]",
+        "installScriptFileName": "get-haa.sh",
+        "installScriptUri": "http://download.uipath.com/haa/get-haa.sh",
+        "SQLTemplateUri": "https://raw.githubusercontent.com/ubikusss/Infrastructure/master/Azure/Orchestrator/PaaS/Deploy/linkedTemplates/SQL.json",
+        "HAATemplateUri": "https://raw.githubusercontent.com/ubikusss/Infrastructure/master/Azure/Orchestrator/PaaS/Deploy/linkedTemplates/HAA.json",
+        "PaaSTemplateUri": "https://raw.githubusercontent.com/ubikusss/Infrastructure/master/Azure/Orchestrator/PaaS/Deploy/linkedTemplates/PaaS.json",
+        "IaaSTemplateUri": "https://raw.githubusercontent.com/ubikusss/Infrastructure/master/Azure/Orchestrator/PaaS/Deploy/linkedTemplates/IaaS.json",
+        "PeeringTemplateUri": "https://raw.githubusercontent.com/ubikusss/Infrastructure/master/Azure/Orchestrator/PaaS/Deploy/linkedTemplates/Peering.json",
         "OrchArtifactsIaaS": {
-            "OrchInstallScript": "[uri(parameters('_artifactsLocation'),concat('scripts/Install-UiPathOrchestrator.ps1',parameters('_artifactsLocationSasToken')))]",
-            "OrchInstallPackage": "[uri(parameters('_artifactsLocation'),concat(parameters('orchestratorVersion'), '/UiPathOrchestrator.msi',parameters('_artifactsLocationSasToken')))]",
-            "OrchInstallRewrite": "[uri(parameters('_artifactsLocation'),concat('artifacts/rewrite_amd64.msi',parameters('_artifactsLocationSasToken')))]",
-            "OrchInstallFramework": "[uri(parameters('_artifactsLocation'),concat('artifacts/NDP472-KB4054530-x86-x64-AllOS-ENU.exe',parameters('_artifactsLocationSasToken')))]"
+            "OrchInstallScript": "https://raw.githubusercontent.com/ubikusss/Infrastructure/master/Setup/Install-UiPathOrchestrator.ps1"
         }
     },
     "resources": [
@@ -573,9 +554,6 @@
                     },
                     "installScriptUri": {
                         "value": "[variables('installScriptUri')]"
-                    },
-                    "installPackageUri": {
-                        "value": "[variables('installPackageUri')]"
                     },
                     "installScriptFileName": {
                         "value": "[variables('installScriptFileName')]"
