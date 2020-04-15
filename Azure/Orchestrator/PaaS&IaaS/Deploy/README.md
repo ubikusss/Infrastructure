@@ -3,14 +3,15 @@
 
 [![Build Status](https://dev.azure.com/hteo-dev/Orchestrator/_apis/build/status/hteo1337.UiPathOrchestrator?branchName=master)](https://dev.azure.com/hteo-dev/Orchestrator/_build/latest?definitionId=4&branchName=master)
 
-This ARM template will deploy UiPath Orchestrator (WebApp - single/multi node with scale out and scale in settings, depending on the number of instances) with following resources:</br>
--App Service with UiPath Orchestrator </br>
--App Service plan</br>
--Azure SQL Server with DB</br>
--Application Insights</br>
--Storage account</br>
--RedisCache (only if the parameter orchestratorInstances is greater than 1 and lower than 10)</br>
--Application Insights Rules (if the selected parameter orchestratorAlertRules is "yes" )</br>
+This ARM template will deploy UiPath Orchestrator IaaS or PaaS version: 
+- Web FrontEnd options: 
+    - App Service Web App with UiPath Orchestrator 
+    - Virtual Machine ScaleSet with load Balancer
+- Azure SQL Server with DB (or you can specify an existing DB)
+- Application Insights (PaaS version) with application insights rules
+- Storage account (If version is 2019.4 or higher for storing nuget packages)
+- UiPath High Availability Add-on (In-memory database cluster with 3 x RHEL VMs)
+- VNet peering for IaaS with the HAA cluster
 
 Unlike the marketplace deployment this will:
 - Not use unique strings
@@ -27,12 +28,12 @@ Deployment steps:
 
 [![Deploy to Azure](https://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fubikusss%2FInfrastructure%2Fmaster%2FAzure%2FOrchestrator%2FPaaS&IaaS%2FDeploy%2FmainTemplate.json)
 
-7. Do not start filling in the parameters, but go to `Edit parameters`
-8. Paste the parameters copied from the previous step:
-- minimize the `parameters` entry
-- select both brackets (`{...}`) for the parameters value
-- paste the json copied from the outputs window
-- click Save
-9. Fill inthe Subscription, resource group and location.
+7. Fill inthe Subscription, resource group and location.
+8. Do not start filling in the parameters, but go to `Edit parameters`
+9. Paste the parameters copied from the previous step:
+    - minimize the `parameters` entry
+    - select both brackets (`{...}`) for the parameters value
+    - paste the json copied from the outputs window
+    - click Save
 10. Accept the terms if you will and click `Purchase`
 11. ENJOY UiPath products!

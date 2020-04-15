@@ -731,12 +731,6 @@
                     },
                     "storageAccountName": {
                         "value": "[variables('storageAccountName')]"
-                    },
-                    "virtualNetworkName": {
-                        "value": "[parameters('HAAvirtualNetworkNameIaaS')]"
-                    },
-                    "virtualNetworkNewOrExisting": {
-                        "value": "[parameters('HAAvirtualNetworkNewOrExistingIaaS')]"
                     }
                 }
             }
