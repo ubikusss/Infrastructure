@@ -58,7 +58,7 @@
 param(
 
   [Parameter()]
-  [ValidateSet('19.10.18', '19.4.4', '19.4.3', '19.4.2', '18.4.6', '18.4.5', '18.4.4', '18.4.3', '18.4.2', '18.4.1')]
+  [ValidateSet('19.10.18','19.4.5', '19.4.4', '19.4.3', '19.4.2', '18.4.6', '18.4.5', '18.4.4', '18.4.3', '18.4.2', '18.4.1')]
   [string] $orchestratorVersion = "19.10.18",
 
   [Parameter()]
@@ -310,7 +310,7 @@ function Main {
   #set storage path
   if ($nuGetStoragePath) {
 
-    if ($orchestratorVersion -lt "19.4.1") {
+    if (($orchestratorVersion -like "19.4*") -or ($orchestratorVersion -like "18.4*")) {
 
       $LBkey = @("NuGet.Packages.Path", "NuGet.Activities.Path" )
 
@@ -336,7 +336,6 @@ function Main {
         Set-AppSettings -path "$orchestratorFolder" -key $LBkey -value $LBvalue
       }
     }
-
   }
 
   # Remove temp directory

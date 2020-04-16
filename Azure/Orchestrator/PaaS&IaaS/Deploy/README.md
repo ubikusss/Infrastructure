@@ -26,7 +26,7 @@ Deployment steps:
 5. Copy the contents from the window that opened
 6. Go here:
 
-[![Deploy to Azure](https://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fubikusss%2FInfrastructure%2Fmaster%2FAzure%2FOrchestrator%2FPaaS&IaaS%2FDeploy%2FmainTemplate.json)
+    [![Deploy to Azure](https://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fubikusss%2FInfrastructure%2Fmaster%2FAzure%2FOrchestrator%2FPaaS&IaaS%2FDeploy%2FmainTemplate.json)
 
 7. Fill inthe Subscription, resource group and location.
 8. Do not start filling in the parameters, but go to `Edit parameters`
